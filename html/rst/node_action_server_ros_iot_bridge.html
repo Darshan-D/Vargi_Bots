@@ -1,0 +1,306 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>node_action_server_ros_iot_bridge module &mdash; Vargi Bots 3 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Vargi Bots
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">node_action_server_ros_iot_bridge module</a></li>
+</ul>
+</div>
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Vargi Bots</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>node_action_server_ros_iot_bridge module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/rst/node_action_server_ros_iot_bridge.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-node_action_server_ros_iot_bridge">
+<span id="node-action-server-ros-iot-bridge-module"></span><h1>node_action_server_ros_iot_bridge module<a class="headerlink" href="#module-node_action_server_ros_iot_bridge" title="Permalink to this headline">¶</a></h1>
+<p>“node_action_server” is used to get the data from MQTT server,
+as well as it is used to publish the data on the google sheets.</p>
+<p>Basically, it handles everything outside the ROS ecosystem</p>
+<dl class="class">
+<dt id="node_action_server_ros_iot_bridge.RosIotBridgeActionServer">
+<em class="property">class </em><code class="descclassname">node_action_server_ros_iot_bridge.</code><code class="descname">RosIotBridgeActionServer</code><a class="reference internal" href="../_modules/node_action_server_ros_iot_bridge.html#RosIotBridgeActionServer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#node_action_server_ros_iot_bridge.RosIotBridgeActionServer" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class used as an ROS action server to handle IoT related stuff.</p>
+<dl class="method">
+<dt id="node_action_server_ros_iot_bridge.RosIotBridgeActionServer.mqtt_sub_callback">
+<code class="descname">mqtt_sub_callback</code><span class="sig-paren">(</span><em>client</em>, <em>userdata</em>, <em>message</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/node_action_server_ros_iot_bridge.html#RosIotBridgeActionServer.mqtt_sub_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#node_action_server_ros_iot_bridge.RosIotBridgeActionServer.mqtt_sub_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>The callback function for when a message is received from MQTT</p>
+<p>This function publishes the message from MQTT to a ROS topic,
+and uploads it to google sheet.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>client</strong> – Client from where we are getting MQTT data</li>
+<li><strong>userdata</strong> – Data of the client</li>
+<li><strong>message</strong> – Incomming message from MQTT</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="node_action_server_ros_iot_bridge.RosIotBridgeActionServer.on_cancel">
+<code class="descname">on_cancel</code><span class="sig-paren">(</span><em>goal_handle</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/node_action_server_ros_iot_bridge.html#RosIotBridgeActionServer.on_cancel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#node_action_server_ros_iot_bridge.RosIotBridgeActionServer.on_cancel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function is called when a cancel request is received.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>goal_handle</strong> – Goal handle of the goal to be cancelled.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="node_action_server_ros_iot_bridge.RosIotBridgeActionServer.on_goal">
+<code class="descname">on_goal</code><span class="sig-paren">(</span><em>goal_handle</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/node_action_server_ros_iot_bridge.html#RosIotBridgeActionServer.on_goal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#node_action_server_ros_iot_bridge.RosIotBridgeActionServer.on_goal" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function will be called when the Action Server receives a goal.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>goal_handle</strong> – The goal handle of the current goal.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="node_action_server_ros_iot_bridge.RosIotBridgeActionServer.process_goal">
+<code class="descname">process_goal</code><span class="sig-paren">(</span><em>goal_handle</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/node_action_server_ros_iot_bridge.html#RosIotBridgeActionServer.process_goal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#node_action_server_ros_iot_bridge.RosIotBridgeActionServer.process_goal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function called to process the goal, after it’s parameters are verified.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>goal_handle</strong> – The goal handle of the goal to be processed.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="node_action_server_ros_iot_bridge.RosIotBridgeActionServer.update_gsheet">
+<code class="descname">update_gsheet</code><span class="sig-paren">(</span><em>goal</em>, <em>calling_from_within</em>, <em>payload</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/node_action_server_ros_iot_bridge.html#RosIotBridgeActionServer.update_gsheet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#node_action_server_ros_iot_bridge.RosIotBridgeActionServer.update_gsheet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to upload the data on google sheet</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>goal</strong> – The goal whose data is to be uplaoded on google sheet.</li>
+<li><strong>calling_from_within</strong> (<em>bool</em>) – True if called from the action server itself.                                                                               False otherwise.                        payload (str): The content to be uploaded on google sheet.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">True if data uploaded successfully.                                                                     False otherwise.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">response.content (bool)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="node_action_server_ros_iot_bridge.main">
+<code class="descclassname">node_action_server_ros_iot_bridge.</code><code class="descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/node_action_server_ros_iot_bridge.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#node_action_server_ros_iot_bridge.main" title="Permalink to this definition">¶</a></dt>
+<dd><p>The main function, execution starts from here</p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, VB1083@Darshan_Dodia.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

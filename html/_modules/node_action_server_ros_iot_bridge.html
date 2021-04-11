@@ -1,0 +1,661 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>node_action_server_ros_iot_bridge &mdash; Vargi Bots 3 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Vargi Bots
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Vargi Bots</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">Module code</a> &raquo;</li>
+        
+      <li>node_action_server_ros_iot_bridge</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for node_action_server_ros_iot_bridge</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">&quot;node_action_server&quot; is used to get the data from MQTT server, </span>
+<span class="sd">as well as it is used to publish the data on the google sheets.</span>
+
+<span class="sd">Basically, it handles everything outside the ROS ecosystem</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">rospy</span>
+<span class="kn">import</span> <span class="nn">actionlib</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
+<span class="kn">from</span> <span class="nn">pkg_ros_iot_bridge.msg</span> <span class="kn">import</span> <span class="n">msgRosIotAction</span>
+<span class="kn">from</span> <span class="nn">pkg_ros_iot_bridge.msg</span> <span class="kn">import</span> <span class="n">msgRosIotGoal</span>
+<span class="kn">from</span> <span class="nn">pkg_ros_iot_bridge.msg</span> <span class="kn">import</span> <span class="n">msgRosIotResult</span>
+<span class="kn">from</span> <span class="nn">pkg_ros_iot_bridge.msg</span> <span class="kn">import</span> <span class="n">msgRosIotFeedback</span>
+
+<span class="kn">from</span> <span class="nn">pkg_ros_iot_bridge.msg</span> <span class="kn">import</span> <span class="n">msgMqttSub</span>
+
+<span class="kn">from</span> <span class="nn">pyiot</span> <span class="kn">import</span> <span class="n">iot</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+
+<div class="viewcode-block" id="RosIotBridgeActionServer"><a class="viewcode-back" href="../rst/node_action_server_ros_iot_bridge.html#node_action_server_ros_iot_bridge.RosIotBridgeActionServer">[docs]</a><span class="k">class</span> <span class="nc">RosIotBridgeActionServer</span><span class="p">:</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	This class used as an ROS action server to handle IoT related stuff.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	
+	<span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		The constructor for the RosIotBridgeActionServer class.</span>
+
+<span class="sd">		This function will initialize this node as an action server. We</span>
+<span class="sd">		will also load various paramter values from the ROS parameter </span>
+<span class="sd">		server, and start a seprate thread to read the data coming from</span>
+<span class="sd">		MQTT client </span>
+<span class="sd">		&quot;&quot;&quot;</span>
+
+		<span class="c1"># Initialize the action server</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_as</span> <span class="o">=</span> <span class="n">actionlib</span><span class="o">.</span><span class="n">ActionServer</span><span class="p">(</span><span class="s1">&#39;/action_ros_iot&#39;</span><span class="p">,</span>
+											<span class="n">msgRosIotAction</span><span class="p">,</span>
+											<span class="bp">self</span><span class="o">.</span><span class="n">on_goal</span><span class="p">,</span>
+											<span class="n">auto_start</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
+		<span class="c1"># * self.on_goal - Pointer of the function to be called </span>
+		<span class="c1"># when a goal is received</span>
+
+		<span class="c1"># * self.on_cancel - Pointer of the function to be called</span>
+		<span class="c1"># when a cancel req is received</span>
+
+
+		<span class="c1"># Read and Store the IOT Configuration from parameter server</span>
+		<span class="n">param_config_iot</span> <span class="o">=</span> <span class="n">rospy</span><span class="o">.</span><span class="n">get_param</span><span class="p">(</span><span class="s1">&#39;config_pyiot&#39;</span><span class="p">)</span>
+
+		<span class="c1"># Loading the MQTT Parameters</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_config_mqtt_server_url</span> <span class="o">=</span> <span class="n">param_config_iot</span><span class="p">[</span><span class="s1">&#39;mqtt&#39;</span><span class="p">][</span><span class="s1">&#39;server_url&#39;</span><span class="p">]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_config_mqtt_server_port</span> <span class="o">=</span> <span class="n">param_config_iot</span><span class="p">[</span><span class="s1">&#39;mqtt&#39;</span><span class="p">][</span><span class="s1">&#39;server_port&#39;</span><span class="p">]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_config_mqtt_sub_topic</span> <span class="o">=</span> <span class="n">param_config_iot</span><span class="p">[</span><span class="s1">&#39;mqtt&#39;</span><span class="p">][</span><span class="s1">&#39;topic_sub&#39;</span><span class="p">]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_config_mqtt_pub_topic</span> <span class="o">=</span> <span class="n">param_config_iot</span><span class="p">[</span><span class="s1">&#39;mqtt&#39;</span><span class="p">][</span><span class="s1">&#39;topic_pub&#39;</span><span class="p">]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_config_mqtt_qos</span> <span class="o">=</span> <span class="n">param_config_iot</span><span class="p">[</span><span class="s1">&#39;mqtt&#39;</span><span class="p">][</span><span class="s1">&#39;qos&#39;</span><span class="p">]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_config_mqtt_sub_cb_ros_topic</span> <span class="o">=</span> <span class="n">param_config_iot</span><span class="p">[</span><span class="s1">&#39;mqtt&#39;</span><span class="p">][</span><span class="s1">&#39;sub_cb_ros_topic&#39;</span><span class="p">]</span>
+
+		<span class="c1"># Loading the Google Sheet Parameter</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_config_sheet_id</span> <span class="o">=</span> <span class="n">param_config_iot</span><span class="p">[</span><span class="s1">&#39;google_apps&#39;</span><span class="p">][</span><span class="s1">&#39;spread_sheet_id&#39;</span><span class="p">]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_config_sheet_url</span> <span class="o">=</span> <span class="n">param_config_iot</span><span class="p">[</span><span class="s1">&#39;google_apps&#39;</span><span class="p">][</span><span class="s1">&#39;spread_sheet_url&#39;</span><span class="p">]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_config_email_id</span> <span class="o">=</span> <span class="n">param_config_iot</span><span class="p">[</span><span class="s1">&#39;google_apps&#39;</span><span class="p">][</span><span class="s1">&#39;email_id&#39;</span><span class="p">]</span>
+		<span class="n">rospy</span><span class="o">.</span><span class="n">logwarn</span><span class="p">(</span><span class="s2">&quot;email_id </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_config_email_id</span><span class="p">))</span>
+		
+		<span class="c1"># Overwriting for Eyantra&#39;s Gsheet</span>
+		<span class="c1"># self._config_sheet_url = &quot;https://script.google.com/macros/s/AKfycbw5xylppoda-8HPjt2Tzq4ShU_Xef-Ik-hEtBPcPk0gdGw8095j4RZ7/exec&quot;</span>
+
+		<span class="c1"># Loading the dictionary for each sheets</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">dict_IncomingOrders</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;IncomingOrders&quot;</span><span class="p">,</span>
+							   <span class="s2">&quot;Team Id&quot;</span><span class="p">:</span> <span class="s2">&quot;VB#1083&quot;</span><span class="p">,</span>
+							   <span class="s2">&quot;Unique Id&quot;</span><span class="p">:</span> <span class="s2">&quot;iOeCqZLI&quot;</span><span class="p">,</span>
+							   <span class="s2">&quot;Order ID&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+							   <span class="s2">&quot;Order Date and Time&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+							   <span class="s2">&quot;Item&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+							   <span class="s2">&quot;Priority&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+							   <span class="s2">&quot;Order Quantity&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+							   <span class="s2">&quot;City&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+							   <span class="s2">&quot;Longitude&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+							   <span class="s2">&quot;Latitude&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+							   <span class="s2">&quot;Cost&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">}</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">dict_Inventory</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;Inventory&quot;</span><span class="p">,</span>
+								<span class="s2">&quot;Team Id&quot;</span><span class="p">:</span> <span class="s2">&quot;VB#1083&quot;</span><span class="p">,</span>
+								<span class="s2">&quot;Unique Id&quot;</span><span class="p">:</span> <span class="s2">&quot;iOeCqZLI&quot;</span><span class="p">,</span>
+								<span class="s2">&quot;SKU&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+								<span class="s2">&quot;Item&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+								<span class="s2">&quot;Priority&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+								<span class="s2">&quot;Storage Number&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+								<span class="s2">&quot;Cost&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+								<span class="s2">&quot;Quantity&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+								<span class="p">}</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersDispatched</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;OrdersDispatched&quot;</span><span class="p">,</span>
+									<span class="s2">&quot;Team Id&quot;</span><span class="p">:</span> <span class="s2">&quot;VB#1083&quot;</span><span class="p">,</span>
+									<span class="s2">&quot;Unique Id&quot;</span><span class="p">:</span> <span class="s2">&quot;iOeCqZLI&quot;</span><span class="p">,</span>
+									<span class="s2">&quot;Order ID&quot;</span><span class="p">:</span><span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+									<span class="s2">&quot;City&quot;</span><span class="p">:</span><span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+									<span class="s2">&quot;Item&quot;</span><span class="p">:</span><span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+									<span class="s2">&quot;Priority&quot;</span><span class="p">:</span><span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+									<span class="s2">&quot;Dispatch Quantity&quot;</span><span class="p">:</span><span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+									<span class="s2">&quot;Cost&quot;</span><span class="p">:</span><span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+									<span class="s2">&quot;Dispatch Status&quot;</span><span class="p">:</span><span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+									<span class="s2">&quot;Dispatch Date and Time&quot;</span><span class="p">:</span><span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+									<span class="s2">&quot;email_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config_email_id</span><span class="p">}</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersShipped</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span><span class="s2">&quot;OrdersShipped&quot;</span><span class="p">,</span>
+									<span class="s2">&quot;Team Id&quot;</span><span class="p">:</span><span class="s2">&quot;VB#1083&quot;</span><span class="p">,</span>
+									<span class="s2">&quot;Unique Id&quot;</span><span class="p">:</span><span class="s2">&quot;iOeCqZLI&quot;</span><span class="p">,</span>
+									<span class="s2">&quot;Order ID&quot;</span><span class="p">:</span><span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+									<span class="s2">&quot;City&quot;</span><span class="p">:</span><span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+									<span class="s2">&quot;Item&quot;</span><span class="p">:</span><span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+									<span class="s2">&quot;Priority&quot;</span><span class="p">:</span><span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+									<span class="s2">&quot;Shipped Quantity&quot;</span><span class="p">:</span><span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+									<span class="s2">&quot;Cost&quot;</span><span class="p">:</span><span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+									<span class="s2">&quot;Shipped Status&quot;</span><span class="p">:</span><span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+									<span class="s2">&quot;Shipped Date and Time&quot;</span><span class="p">:</span><span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+									<span class="s2">&quot;Estimated Time of Delivery&quot;</span><span class="p">:</span><span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+									<span class="s2">&quot;email_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config_email_id</span><span class="p">}</span>
+									
+
+		<span class="c1"># Initialize the ros topic &#39;/ros_iot_bridge/mqtt/sub&#39; so that</span>
+		<span class="c1"># other ROS nodes can listen to MQTT messages</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_handle_ros_pub</span> <span class="o">=</span> <span class="n">rospy</span><span class="o">.</span><span class="n">Publisher</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_config_mqtt_sub_cb_ros_topic</span><span class="p">,</span>
+												<span class="n">msgMqttSub</span><span class="p">,</span>
+												<span class="n">queue_size</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span>
+
+		<span class="c1"># Subscribe to MQTT topic &#39;eyrc/iOeCqZLl/iot_to_ros&#39; so that</span>
+		<span class="c1"># it can later on publish the message to &#39;/ros_iot_bridge/mqtt/sub&#39;</span>
+		<span class="c1"># for other ROS Nodes to listen</span>
+		<span class="n">ret</span> <span class="o">=</span> <span class="n">iot</span><span class="o">.</span><span class="n">mqtt_subscribe_thread_start</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mqtt_sub_callback</span><span class="p">,</span>
+												<span class="bp">self</span><span class="o">.</span><span class="n">_config_mqtt_server_url</span><span class="p">,</span>
+												<span class="bp">self</span><span class="o">.</span><span class="n">_config_mqtt_server_port</span><span class="p">,</span>
+												<span class="bp">self</span><span class="o">.</span><span class="n">_config_mqtt_sub_topic</span><span class="p">,</span>
+												<span class="bp">self</span><span class="o">.</span><span class="n">_config_mqtt_qos</span><span class="p">)</span>
+
+		<span class="c1"># * mqtt_sub_callback - Function which will be called when this node</span>
+		<span class="c1"># receives the message from MQTT</span>
+		<span class="c1"># * other arguments - probably required to make connection to</span>
+		<span class="c1"># appropiate server (assumption)</span>
+
+		<span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+			<span class="n">rospy</span><span class="o">.</span><span class="n">loginfo</span><span class="p">(</span><span class="s2">&quot;[BRIDGE] MQTT Subscribe Thread Started&quot;</span><span class="p">)</span>
+
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">rospy</span><span class="o">.</span><span class="n">logerr</span><span class="p">(</span><span class="s2">&quot;[BRIDGE] Failed to start MQTT Subscribe Thread&quot;</span><span class="p">)</span>
+
+		<span class="c1"># Start the Action Server</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_as</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+		<span class="n">rospy</span><span class="o">.</span><span class="n">loginfo</span><span class="p">(</span><span class="s2">&quot;[BRIDGE] Started ROS IOT Bridge&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="RosIotBridgeActionServer.mqtt_sub_callback"><a class="viewcode-back" href="../rst/node_action_server_ros_iot_bridge.html#node_action_server_ros_iot_bridge.RosIotBridgeActionServer.mqtt_sub_callback">[docs]</a>	<span class="k">def</span> <span class="nf">mqtt_sub_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">userdata</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+	<span class="c1">#def mqtt_sub_callback(self, message):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		The callback function for when a message is received from MQTT</span>
+
+<span class="sd">		This function publishes the message from MQTT to a ROS topic,</span>
+<span class="sd">		and uploads it to google sheet.</span>
+
+<span class="sd">		Parameters:</span>
+<span class="sd">			client: Client from where we are getting MQTT data</span>
+<span class="sd">			userdata: Data of the client</span>
+<span class="sd">			message: Incomming message from MQTT</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+
+		<span class="c1"># Decode the message using UTF-8 and convert it</span>
+		<span class="c1"># to &#39;string&#39; datatype</span>
+		<span class="n">payload</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
+
+		<span class="n">rospy</span><span class="o">.</span><span class="n">loginfo</span><span class="p">(</span><span class="s2">&quot;[BRIDGE] Message Received from MQTT&quot;</span><span class="p">)</span>
+
+		<span class="c1"># Give the appropiate values to the contents of the message</span>
+		<span class="c1"># that will be published to &#39;/ros_iot_bridge/mqtt/sub&#39;</span>
+		<span class="n">msg_mqtt_sub</span> <span class="o">=</span> <span class="n">msgMqttSub</span><span class="p">()</span>
+		<span class="n">msg_mqtt_sub</span><span class="o">.</span><span class="n">timestamp</span> <span class="o">=</span> <span class="n">rospy</span><span class="o">.</span><span class="n">Time</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+		<span class="n">msg_mqtt_sub</span><span class="o">.</span><span class="n">topic</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">topic</span>
+		<span class="n">msg_mqtt_sub</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">payload</span>
+
+		<span class="c1"># Publish the message</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_handle_ros_pub</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">msg_mqtt_sub</span><span class="p">)</span>
+
+		<span class="c1"># Upload to Google Sheet</span>
+		<span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_gsheet</span><span class="p">(</span><span class="s2">&quot;None&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RosIotBridgeActionServer.on_goal"><a class="viewcode-back" href="../rst/node_action_server_ros_iot_bridge.html#node_action_server_ros_iot_bridge.RosIotBridgeActionServer.on_goal">[docs]</a>	<span class="k">def</span> <span class="nf">on_goal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">goal_handle</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		This function will be called when the Action Server receives a goal.</span>
+
+<span class="sd">		Parameters:</span>
+<span class="sd">			goal_handle: The goal handle of the current goal.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+
+		<span class="c1"># Get the goal corresponding to the current goal handle</span>
+		<span class="n">goal</span> <span class="o">=</span> <span class="n">goal_handle</span><span class="o">.</span><span class="n">get_goal</span><span class="p">()</span>
+
+		<span class="n">rospy</span><span class="o">.</span><span class="n">loginfo</span><span class="p">(</span><span class="s2">&quot;[BRIDGE] Received a goal from client&quot;</span><span class="p">)</span>
+
+		<span class="c1"># Validate goal parameter before publishing data to MQTT</span>
+		<span class="k">if</span><span class="p">(</span><span class="n">goal</span><span class="o">.</span><span class="n">protocol</span> <span class="o">==</span> <span class="s1">&#39;google_apps&#39;</span><span class="p">):</span>
+
+			<span class="c1"># Set the goal as accepted</span>
+			<span class="n">goal_handle</span><span class="o">.</span><span class="n">set_accepted</span><span class="p">()</span>
+			<span class="n">rospy</span><span class="o">.</span><span class="n">logwarn</span><span class="p">(</span><span class="s2">&quot;State Accepted&quot;</span><span class="p">)</span>
+
+			<span class="c1"># Start processing the goal</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">process_goal</span><span class="p">(</span><span class="n">goal_handle</span><span class="p">)</span>
+
+		<span class="k">else</span><span class="p">:</span>
+
+			<span class="c1"># Set the Goal as rejected</span>
+			<span class="n">goal_handle</span><span class="o">.</span><span class="n">set_rejected</span><span class="p">()</span>
+			<span class="n">rospy</span><span class="o">.</span><span class="n">logwarn</span><span class="p">(</span><span class="s2">&quot;State Rejected&quot;</span><span class="p">)</span>
+			<span class="k">return</span></div>
+	
+<div class="viewcode-block" id="RosIotBridgeActionServer.process_goal"><a class="viewcode-back" href="../rst/node_action_server_ros_iot_bridge.html#node_action_server_ros_iot_bridge.RosIotBridgeActionServer.process_goal">[docs]</a>	<span class="k">def</span> <span class="nf">process_goal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">goal_handle</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Function called to process the goal, after it&#39;s parameters are verified.</span>
+<span class="sd">		</span>
+<span class="sd">		Parameters:</span>
+<span class="sd">			goal_handle: The goal handle of the goal to be processed.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+
+		<span class="n">flag_success</span> <span class="o">=</span> <span class="kc">False</span>
+
+		<span class="c1"># Initialize the object for msgRosIotResult</span>
+		<span class="n">result</span> <span class="o">=</span> <span class="n">msgRosIotResult</span><span class="p">()</span>
+
+		<span class="c1"># Get the ID of the current goal handle</span>
+		<span class="n">goal_id</span> <span class="o">=</span> <span class="n">goal_handle</span><span class="o">.</span><span class="n">get_goal_id</span><span class="p">()</span>
+		<span class="n">rospy</span><span class="o">.</span><span class="n">loginfo</span><span class="p">(</span><span class="s2">&quot;[BRIDGE] Processing Goal: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">goal_id</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+		<span class="n">rospy</span><span class="o">.</span><span class="n">logwarn</span><span class="p">(</span><span class="s2">&quot;Processing Goal&quot;</span><span class="p">)</span>
+
+		<span class="c1"># Get the current goal using goal handle</span>
+		<span class="n">goal</span> <span class="o">=</span> <span class="n">goal_handle</span><span class="o">.</span><span class="n">get_goal</span><span class="p">()</span>
+
+		<span class="c1"># Upload the data to google sheet</span>
+		<span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_gsheet</span><span class="p">(</span><span class="n">goal</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+		<span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">==</span> <span class="s2">&quot;success&quot;</span><span class="p">):</span>
+			<span class="c1"># If uploaded successfully</span>
+			<span class="n">result</span><span class="o">.</span><span class="n">flag_success</span> <span class="o">=</span> <span class="kc">True</span>
+
+			<span class="c1"># Set the goal status as succeeded</span>
+			<span class="n">goal_handle</span><span class="o">.</span><span class="n">set_succeeded</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+			<span class="n">rospy</span><span class="o">.</span><span class="n">logwarn</span><span class="p">(</span><span class="s2">&quot;Goal Suceeded&quot;</span><span class="p">)</span>
+
+		<span class="k">else</span><span class="p">:</span>
+			<span class="c1"># If not uploaded successfully</span>
+			<span class="n">rospy</span><span class="o">.</span><span class="n">logerr</span><span class="p">(</span><span class="s2">&quot;[BRIDGE] Failed at a Goal, ID: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">goal_handle</span><span class="p">))</span>
+			<span class="n">result</span><span class="o">.</span><span class="n">flag_success</span> <span class="o">=</span> <span class="kc">False</span>
+
+			<span class="c1"># Set state as aborted / failed</span>
+			<span class="n">goal_handle</span><span class="o">.</span><span class="n">set_aborted</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+		<span class="n">rospy</span><span class="o">.</span><span class="n">loginfo</span><span class="p">(</span><span class="s2">&quot;[BRIDGE] Goal ID: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">goal_id</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot; Goal Processing Done.&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RosIotBridgeActionServer.on_cancel"><a class="viewcode-back" href="../rst/node_action_server_ros_iot_bridge.html#node_action_server_ros_iot_bridge.RosIotBridgeActionServer.on_cancel">[docs]</a>	<span class="k">def</span> <span class="nf">on_cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">goal_handle</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Function is called when a cancel request is received.</span>
+
+<span class="sd">		Parameters:</span>
+<span class="sd">			goal_handle: Goal handle of the goal to be cancelled.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">rospy</span><span class="o">.</span><span class="n">loginfo</span><span class="p">(</span><span class="s2">&quot;[BRIDGE] Received cancel request.&quot;</span><span class="p">)</span>
+		<span class="n">goal_id</span> <span class="o">=</span> <span class="n">goal_handle</span><span class="o">.</span><span class="n">get_goal_id</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="RosIotBridgeActionServer.update_gsheet"><a class="viewcode-back" href="../rst/node_action_server_ros_iot_bridge.html#node_action_server_ros_iot_bridge.RosIotBridgeActionServer.update_gsheet">[docs]</a>	<span class="k">def</span> <span class="nf">update_gsheet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">goal</span><span class="p">,</span> <span class="n">calling_from_within</span><span class="p">,</span> <span class="n">payload</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Function to upload the data on google sheet</span>
+
+<span class="sd">		Parameters:</span>
+<span class="sd">			goal: The goal whose data is to be uplaoded on google sheet.</span>
+<span class="sd">			calling_from_within (bool): True if called from the action server itself. \</span>
+<span class="sd">										False otherwise. \</span>
+<span class="sd">			payload (str): The content to be uploaded on google sheet.</span>
+
+<span class="sd">		Returns:</span>
+<span class="sd">			response.content (bool): True if data uploaded successfully. \</span>
+<span class="sd">									 False otherwise.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+
+		<span class="c1"># If called from within the action server</span>
+		<span class="k">if</span> <span class="n">calling_from_within</span><span class="p">:</span>
+
+			<span class="c1"># Read the JSON data</span>
+			<span class="n">loaded_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+			<span class="c1"># Save the order attributes as a dictionary</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">dict_IncomingOrders</span><span class="p">[</span><span class="s1">&#39;City&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loaded_json</span><span class="p">[</span><span class="s1">&#39;city&#39;</span><span class="p">]</span>
+			<span class="n">rospy</span><span class="o">.</span><span class="n">logwarn</span><span class="p">(</span><span class="s2">&quot;TIME </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">loaded_json</span><span class="p">[</span><span class="s1">&#39;order_time&#39;</span><span class="p">]))</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">dict_IncomingOrders</span><span class="p">[</span><span class="s1">&#39;Order Date and Time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loaded_json</span><span class="p">[</span><span class="s1">&#39;order_time&#39;</span><span class="p">]</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">dict_IncomingOrders</span><span class="p">[</span><span class="s1">&#39;Order ID&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loaded_json</span><span class="p">[</span><span class="s1">&#39;order_id&#39;</span><span class="p">]</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">dict_IncomingOrders</span><span class="p">[</span><span class="s1">&#39;Order Quantity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loaded_json</span><span class="p">[</span><span class="s1">&#39;qty&#39;</span><span class="p">]</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">dict_IncomingOrders</span><span class="p">[</span><span class="s1">&#39;Item&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loaded_json</span><span class="p">[</span><span class="s1">&#39;item&#39;</span><span class="p">]</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">dict_IncomingOrders</span><span class="p">[</span><span class="s1">&#39;Latitude&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loaded_json</span><span class="p">[</span><span class="s1">&#39;lat&#39;</span><span class="p">]</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">dict_IncomingOrders</span><span class="p">[</span><span class="s1">&#39;Longitude&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loaded_json</span><span class="p">[</span><span class="s1">&#39;lon&#39;</span><span class="p">]</span>
+			
+			<span class="k">if</span> <span class="n">loaded_json</span><span class="p">[</span><span class="s1">&#39;item&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Clothes&quot;</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">dict_IncomingOrders</span><span class="p">[</span><span class="s1">&#39;Priority&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;LP&quot;</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">dict_IncomingOrders</span><span class="p">[</span><span class="s1">&#39;Cost&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;50&quot;</span>
+
+			<span class="k">if</span> <span class="n">loaded_json</span><span class="p">[</span><span class="s1">&#39;item&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Food&quot;</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">dict_IncomingOrders</span><span class="p">[</span><span class="s1">&#39;Priority&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;MP&quot;</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">dict_IncomingOrders</span><span class="p">[</span><span class="s1">&#39;Cost&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;100&quot;</span>
+
+			<span class="k">if</span> <span class="n">loaded_json</span><span class="p">[</span><span class="s1">&#39;item&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Medicine&quot;</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">dict_IncomingOrders</span><span class="p">[</span><span class="s1">&#39;Priority&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;HP&quot;</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">dict_IncomingOrders</span><span class="p">[</span><span class="s1">&#39;Cost&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;150&quot;</span>
+
+			<span class="c1"># Upload the data to google sheet</span>
+			<span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_config_sheet_url</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_IncomingOrders</span><span class="p">)</span>
+			<span class="n">rospy</span><span class="o">.</span><span class="n">loginfo</span><span class="p">(</span><span class="s2">&quot;[BRIDGE] Gsheet Update Status: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">))</span>
+			<span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">content</span>
+
+		<span class="c1"># If not called from within the action server</span>
+		<span class="k">else</span><span class="p">:</span>
+
+			<span class="c1"># If data is to be uploaded in Inventory sheet</span>
+			<span class="k">if</span> <span class="n">goal</span><span class="o">.</span><span class="n">topic</span> <span class="o">==</span> <span class="s2">&quot;Inventory&quot;</span><span class="p">:</span>
+
+				<span class="c1"># Split the message, and store the contents of the </span>
+				<span class="c1"># message as a key value pair in a dictionary</span>
+
+				<span class="c1"># All the attributes are seprated by a underscore, so split it </span>
+				<span class="n">package_info</span> <span class="o">=</span> <span class="n">goal</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span>
+				<span class="n">package_name</span> <span class="o">=</span> <span class="n">package_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+				<span class="n">package_color</span> <span class="o">=</span> <span class="n">package_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+				
+				<span class="n">storage_number</span> <span class="o">=</span> <span class="s2">&quot;R&quot;</span><span class="o">+</span><span class="n">package_name</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span><span class="o">+</span><span class="s2">&quot;C&quot;</span><span class="o">+</span><span class="n">package_name</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">dict_Inventory</span><span class="p">[</span><span class="s1">&#39;Storage Number&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">storage_number</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">dict_Inventory</span><span class="p">[</span><span class="s1">&#39;Quantity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;1&quot;</span>
+				
+				<span class="c1"># For SKU</span>
+				<span class="n">today</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+				<span class="n">today</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">today</span><span class="p">)</span>
+				<span class="n">today</span> <span class="o">=</span> <span class="n">today</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+				<span class="n">date</span> <span class="o">=</span> <span class="n">today</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)</span>
+				
+				<span class="n">year</span> <span class="o">=</span> <span class="n">date</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
+				<span class="n">month</span> <span class="o">=</span> <span class="n">date</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+				<span class="n">inventory_pose</span> <span class="o">=</span> <span class="n">package_name</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">package_name</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+				<span class="c1"># Figure out diffrent attributes from the package color</span>
+				<span class="k">if</span> <span class="n">package_color</span> <span class="o">==</span> <span class="s2">&quot;red&quot;</span><span class="p">:</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_Inventory</span><span class="p">[</span><span class="s1">&#39;Item&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Medicine&quot;</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_Inventory</span><span class="p">[</span><span class="s1">&#39;Priority&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;HP&quot;</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_Inventory</span><span class="p">[</span><span class="s1">&#39;Cost&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;150&quot;</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_Inventory</span><span class="p">[</span><span class="s1">&#39;SKU&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;R&quot;</span><span class="o">+</span><span class="n">inventory_pose</span><span class="o">+</span><span class="n">month</span><span class="o">+</span><span class="n">year</span>
+
+				<span class="k">elif</span> <span class="n">package_color</span> <span class="o">==</span> <span class="s2">&quot;yellow&quot;</span><span class="p">:</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_Inventory</span><span class="p">[</span><span class="s1">&#39;Item&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Food&quot;</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_Inventory</span><span class="p">[</span><span class="s1">&#39;Priority&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;MP&quot;</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_Inventory</span><span class="p">[</span><span class="s1">&#39;Cost&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;100&quot;</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_Inventory</span><span class="p">[</span><span class="s1">&#39;SKU&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Y&quot;</span><span class="o">+</span><span class="n">inventory_pose</span><span class="o">+</span><span class="n">month</span><span class="o">+</span><span class="n">year</span>
+
+				<span class="k">elif</span> <span class="n">package_color</span> <span class="o">==</span> <span class="s2">&quot;green&quot;</span><span class="p">:</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_Inventory</span><span class="p">[</span><span class="s1">&#39;Item&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Clothes&quot;</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_Inventory</span><span class="p">[</span><span class="s1">&#39;Priority&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;LP&quot;</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_Inventory</span><span class="p">[</span><span class="s1">&#39;Cost&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;50&quot;</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_Inventory</span><span class="p">[</span><span class="s1">&#39;SKU&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;G&quot;</span><span class="o">+</span><span class="n">inventory_pose</span><span class="o">+</span><span class="n">month</span><span class="o">+</span><span class="n">year</span>
+
+				<span class="n">gsheet_paramters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_Inventory</span>
+
+
+			<span class="c1"># If data is to be uploaded in OrdersDispatched sheet</span>
+			<span class="k">elif</span> <span class="n">goal</span><span class="o">.</span><span class="n">topic</span> <span class="o">==</span> <span class="s2">&quot;OrdersDispatched&quot;</span><span class="p">:</span>
+
+				<span class="c1"># Split the message, and store the contents of the </span>
+				<span class="c1"># message as a key value pair in a dictionary</span>
+
+				<span class="c1"># All the attributes are seprated by a comma, so spliting it </span>
+				<span class="n">package_info</span> <span class="o">=</span> <span class="n">goal</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+				
+				<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersDispatched</span><span class="p">[</span><span class="s1">&#39;Order ID&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">package_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersDispatched</span><span class="p">[</span><span class="s1">&#39;City&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">package_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersDispatched</span><span class="p">[</span><span class="s1">&#39;Item&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">package_info</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+				<span class="c1"># Figuring out other attributes from the type of content</span>
+				<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersDispatched</span><span class="p">[</span><span class="s1">&#39;Item&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Medicine&quot;</span><span class="p">:</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersDispatched</span><span class="p">[</span><span class="s1">&#39;Priority&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;HP&quot;</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersDispatched</span><span class="p">[</span><span class="s1">&#39;Cost&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;150&quot;</span>
+				
+				<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersDispatched</span><span class="p">[</span><span class="s1">&#39;Item&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Food&quot;</span><span class="p">:</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersDispatched</span><span class="p">[</span><span class="s1">&#39;Priority&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;MP&quot;</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersDispatched</span><span class="p">[</span><span class="s1">&#39;Cost&#39;</span><span class="p">]</span> <span class="o">=</span><span class="s2">&quot;100&quot;</span>
+
+				<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersDispatched</span><span class="p">[</span><span class="s1">&#39;Item&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Clothes&quot;</span><span class="p">:</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersDispatched</span><span class="p">[</span><span class="s1">&#39;Priority&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;LP&quot;</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersDispatched</span><span class="p">[</span><span class="s1">&#39;Cost&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;50&quot;</span>
+
+				<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersDispatched</span><span class="p">[</span><span class="s1">&#39;Dispatch Quantity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">package_info</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersDispatched</span><span class="p">[</span><span class="s1">&#39;Dispatch Status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">package_info</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersDispatched</span><span class="p">[</span><span class="s1">&#39;Dispatch Date and Time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">package_info</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+
+
+			 	<span class="n">gsheet_paramters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersDispatched</span>
+
+			<span class="c1"># If data is to be uploaded in OrdersShipped sheet</span>
+			<span class="k">elif</span> <span class="n">goal</span><span class="o">.</span><span class="n">topic</span> <span class="o">==</span> <span class="s2">&quot;OrdersShipped&quot;</span><span class="p">:</span>
+
+				<span class="c1"># Split the message, and store the contents of the </span>
+				<span class="c1"># message as a key value pair in a dictionary</span>
+
+				<span class="c1"># All the attributes are seprated by a comma, so spliting it </span>
+				<span class="n">package_info</span> <span class="o">=</span> <span class="n">goal</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+
+				<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersShipped</span><span class="p">[</span><span class="s1">&#39;Order ID&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">package_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersShipped</span><span class="p">[</span><span class="s1">&#39;City&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">package_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+				
+				<span class="c1"># Figuring out other attributs from the color of the package</span>
+				<span class="k">if</span> <span class="n">package_info</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;red&#39;</span><span class="p">:</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersShipped</span><span class="p">[</span><span class="s1">&#39;Item&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Medicine&quot;</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersShipped</span><span class="p">[</span><span class="s1">&#39;Priority&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;HP&quot;</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersShipped</span><span class="p">[</span><span class="s1">&#39;Cost&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;150&quot;</span>
+				<span class="k">elif</span> <span class="n">package_info</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;yellow&#39;</span><span class="p">:</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersShipped</span><span class="p">[</span><span class="s1">&#39;Item&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Food&quot;</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersShipped</span><span class="p">[</span><span class="s1">&#39;Priority&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;MP&quot;</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersShipped</span><span class="p">[</span><span class="s1">&#39;Cost&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;100&quot;</span>
+				<span class="k">elif</span> <span class="n">package_info</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;green&#39;</span><span class="p">:</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersShipped</span><span class="p">[</span><span class="s1">&#39;Item&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Clothes&quot;</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersShipped</span><span class="p">[</span><span class="s1">&#39;Priority&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;LP&quot;</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersShipped</span><span class="p">[</span><span class="s1">&#39;Cost&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;50&quot;</span>
+
+				<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersShipped</span><span class="p">[</span><span class="s1">&#39;Shipped Quantity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">package_info</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersShipped</span><span class="p">[</span><span class="s1">&#39;Shipped Status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;YES&quot;</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersShipped</span><span class="p">[</span><span class="s1">&#39;Shipped Date and Time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">package_info</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersShipped</span><span class="p">[</span><span class="s1">&#39;Estimated Time of Delivery&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">package_info</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+
+				<span class="n">gsheet_paramters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_OrdersShipped</span>
+
+			<span class="c1"># Upload the data to google sheet</span>
+			<span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_config_sheet_url</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="n">gsheet_paramters</span><span class="p">)</span>
+			<span class="n">rospy</span><span class="o">.</span><span class="n">loginfo</span><span class="p">(</span><span class="s2">&quot;[BRIDGE] Gsheet Update Status: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">))</span>
+			<span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">content</span></div></div>
+
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../rst/node_action_server_ros_iot_bridge.html#node_action_server_ros_iot_bridge.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	The main function, execution starts from here</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="c1"># Initialize the node</span>
+	<span class="n">rospy</span><span class="o">.</span><span class="n">init_node</span><span class="p">(</span><span class="s2">&quot;node_action_server_ros_iot_bridge&quot;</span><span class="p">)</span>
+
+	<span class="c1"># Create a object for RosIotBridgeActionServer class</span>
+	<span class="n">action_server</span> <span class="o">=</span> <span class="n">RosIotBridgeActionServer</span><span class="p">()</span>
+
+	<span class="c1"># Not letting this node die</span>
+	<span class="n">rospy</span><span class="o">.</span><span class="n">spin</span><span class="p">()</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+	<span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, VB1083@Darshan_Dodia.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

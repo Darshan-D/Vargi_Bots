@@ -1,0 +1,525 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Vargi Bots’s documentation &mdash; Vargi Bots 3 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="#" class="icon icon-home"> Vargi Bots
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">Vargi Bots’s documentation</a></li>
+<li><a class="reference internal" href="#introduction">Introduction</a><ul>
+<li><a class="reference internal" href="#so-how-it-works-what-is-the-flow">So how it works? / What is the flow?</a><ul>
+<li><a class="reference internal" href="#concepts-used-for-the-implementation">Concepts Used for the implementation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#implementation">Implementation</a><ul>
+<li><a class="reference internal" href="#incoming-orders">Incoming Orders</a></li>
+<li><a class="reference internal" href="#identifying-packages-from-shelf">Identifying Packages From Shelf</a><ul>
+<li><a class="reference internal" href="#processing-the-camera-feed">Processing the camera feed</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#dispatching-the-package">Dispatching The Package</a><ul>
+<li><a class="reference internal" href="#how-to-dispatch-hp-orders-packages-first">How to dispatch HP orders packages first?</a></li>
+<li><a class="reference internal" href="#moving-the-ur5-arm-towards-the-package">Moving the UR5 Arm towards the package</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#shipping-the-package">Shipping The Package</a><ul>
+<li><a class="reference internal" href="#what-are-priority-bins">What are priority bins?</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#rqt-graph">RQT Graph</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#api-documentation">API Documentation</a><ul>
+<li><a class="reference internal" href="#python-api-s">Python API’s</a></li>
+<li><a class="reference internal" href="#other-files">Other Files</a><ul>
+<li><a class="reference internal" href="#files-in-pkg-ros-iot-bridge-pkg">Files in <em>pkg_ros_iot_bridge</em> pkg</a></li>
+<li><a class="reference internal" href="#files-in-pkg-task5-pkg">Files in <em>pkg_task5</em> pkg</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">Vargi Bots</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="#" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Vargi Bots’s documentation</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="vargi-bots-s-documentation">
+<h1>Vargi Bots’s documentation<a class="headerlink" href="#vargi-bots-s-documentation" title="Permalink to this headline">¶</a></h1>
+<p>This whole project was part of the e-Yantra Robotics Competition
+organized by IIT - Bombay. The assets used belongs to e-Yantra.
+
+The primary aim of the project is to automate the warehouse.
+Vargi is taken from a Sanskrit word, Vargikaran (वर्गीकरण) which
+means to separate objects based on their category. The theme 
+is set in the abstraction of a warehouse management system 
+designed in Gazebo, which is a 3D dynamic simulator used to 
+efficiently simulate robots in complex environments. </p>
+<div class="toctree-wrapper compound">
+</div>
+</div>
+<div class="section" id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<p>We all have ordered something online, for us it arrives at a click
+of a button. But behind the scenes, there is a whole complex
+logistics chain compromising of many people, who work day in
+and night out to deliver the item you ordered. As humans we are
+prone to mistakes and cannot work with maximum efficiency all the
+time. So what if, all these was automated?</p>
+<p>Compared to humans, robots can work at maximum efficiency all the
+time, and are less prone to mistakes. So working on the same idea
+here we present to you a completely automated warehouse. As a strong
+belivers in Industrial Revolution 4.0, everything in this warehouse
+is automated!</p>
+<div class="section" id="so-how-it-works-what-is-the-flow">
+<h2>So how it works? / What is the flow?<a class="headerlink" href="#so-how-it-works-what-is-the-flow" title="Permalink to this headline">¶</a></h2>
+<p>As soon as an order is received by the warehouse a camera looks at
+the available packages on the shelf, finds the position of the
+required package on the shelf and sends that position to a robotic
+arm. The robotic arm used in this warehouse is UR5. The arm goes to
+the given position and grabs the package using vaccum suction, and
+places it on the conveyor belt. There is another UR5 robotic arm on
+the other end of the conveyor belt. This arm picks up the package and
+puts it inside a bin, there are 3 diffrent bins, each representing 3
+different priority orders. This arm detects the package with the help
+of yet another camera this time present on top of the conveyor belt</p>
+<p>If those too many sentences confused you here is a simplified bullet
+points version of the above paragraph.</p>
+<ol class="arabic simple">
+<li>Order is Received by the Warehouse</li>
+<li>A camera scans for available packages on the shelf</li>
+<li>Camera finds position of the required order (package) on the shelf</li>
+<li>A robotic arm moves to the position of package, given by camera</li>
+<li>Robotic arm grabs the package and places it on a moving conveyor belt</li>
+<li>Another camera present on the other side of the conveyor belt looks for that package</li>
+<li>After detecting that package, it triggers the second robotic arm which is also present on the other side of the conveyor.</li>
+<li>The second robotic arm grabs the package from the moving conveyor and places it inside a bin, from where it can be loaded and delivered.</li>
+</ol>
+<p>This is sort of a brief summary of what we have done.</p>
+<p>Here is our implementation Video of the same:
+<iframe width="560" height="315" src="https://www.youtube.com/embed/lSZ3mQ5N2qE" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<a class="reference external" href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">https://www.youtube.com/watch?v=dQw4w9WgXcQ</a></p>
+<div class="section" id="concepts-used-for-the-implementation">
+<h3>Concepts Used for the implementation<a class="headerlink" href="#concepts-used-for-the-implementation" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>Robotic Operating System (ROS)</li>
+<li>Robotic Manipulation</li>
+<li>Robotic Perception</li>
+<li>Internet of Things (IoT)</li>
+<li>Google App Scripting</li>
+<li>Javascript</li>
+<li>Python</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="section" id="implementation">
+<h1>Implementation<a class="headerlink" href="#implementation" title="Permalink to this headline">¶</a></h1>
+<p>So now, let’s get into specific nitty gritty details of the implementation.</p>
+<div class="section" id="incoming-orders">
+<h2>Incoming Orders<a class="headerlink" href="#incoming-orders" title="Permalink to this headline">¶</a></h2>
+<p>The orders are sent via the <em>MQTT Protocol</em>. MQTT or Message Queue
+Telemetry Transport protocol is a publish/subscribe, extremly simple
+and lightweight protocol. This publish/subscribe model allows MQTT to
+communicate as one-to-one, one-to-many and many-to-one. It is popular
+among use cases where there is low bandwidth, high-latency or
+unreliable networks. MQTT also provides us with a parameter called
+Quality of Service (QoS).</p>
+<p>Let us discuss few of these terms in some details:</p>
+<ol class="arabic simple">
+<li>Publisher: The publisher publishes the message</li>
+<li>Subscriber: The subscriber receives the message</li>
+<li><dl class="first docutils">
+<dt>QoS: MQTT protocol provides us with 3 QoS, they are as follows</dt>
+<dd><ul class="first last">
+<li>QoS0: Message is sent but no confirmation is received</li>
+<li>QoS1: Message sent atleast once, but duplicates may be received</li>
+<li>QoS2: Most Reliable one, here duplicates are controlled by making sure message is sent only once.</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ol>
+<p><strong>There is also a concept of MQTT Topics (which is similar to ROS Topics) and MQTT Broker (Broker serves as middle man through which messages are sent and received) which are not dicussed in details here</strong></p>
+<p>So the incoming orders are sent via the MQTT protocol, using QoS0 and
+under the topic <em>‘/eyrc/vb/iOeCqZLl/orders’</em></p>
+<p>These orders are received by the ROS node <em>‘node_action_server_ros_iot_bridge’</em>. After receiveing them, it publishes them to a ROS topic <em>‘/ros_iot_bridge/mqtt/sub’</em>.
+This is done inorder to make the other ROS nodes listen to what
+the incoming order is, and act accordingly. The ROS node
+<em>‘node_action_server_ros_iot_bridge’</em> also publishes it a Google
+sheet.</p>
+<p>There are three diffrent priority of orders:</p>
+<ol class="arabic simple">
+<li>High Priority (HP):   These are the orders for Medicines</li>
+<li>Medium Priority (MP): These are the orders for Food Packages</li>
+<li>Low Priority (LP):    These are the orders for Clothes</li>
+</ol>
+<p>One of the aim is to reduce the delivery time such that HP order
+takes the lowest time and LP order can take the most time to be
+delivered among these 3 priority.</p>
+<p>In other words, the delivery time for these diffrent priority orders
+should be as: <em>HP &lt; MP &lt; LP</em></p>
+</div>
+<div class="section" id="identifying-packages-from-shelf">
+<h2>Identifying Packages From Shelf<a class="headerlink" href="#identifying-packages-from-shelf" title="Permalink to this headline">¶</a></h2>
+<p>The process of identifying packages from the shelf runs indepedently
+from the Incoming Orders. So whether we are receiving order or not,
+a camera scans the shelf and saves list of all the available packages along with it’s priority as a key value pair. <strong>This is done only once per run.</strong> The ROS Node used to do this is <em>node_package_info</em>.</p>
+<p>The packages are color coded as well as have QR code on them, to help
+us identify it’s priority. The color code - priority relation is as
+follows:</p>
+<ul class="simple">
+<li><em>Red Color - High Priority</em></li>
+<li><em>Yellow Color - Medium Priority</em></li>
+<li><em>Green Color - Low Priority</em></li>
+</ul>
+<p>So, in order to identify the package and it’s priority we had two
+options. The first, to figure out the package colour by isolating
+other colours. The second, to read the QR data on the package. We
+have selected second approach as that seemed much simpler and faster.</p>
+<p>Here is what the camera stream looks like</p>
+<img alt="_images/raw_img.png" src="_images/raw_img.png" />
+<p>This camera stream is published on the ROS Topic <em>‘/eyrc/vb/camera_1/image_raw’.</em></p>
+<div class="section" id="processing-the-camera-feed">
+<h3>Processing the camera feed<a class="headerlink" href="#processing-the-camera-feed" title="Permalink to this headline">¶</a></h3>
+<p>As you can see from the above image the camera feed is a bit dull and
+smooth, basically not great to read the QR Code directly. As a result,
+a bit of preprocessing was required. So here are all the preprocessing steps we followed:</p>
+<p>1. Converting to Grey Scale:
+Since we are going to read the QR code, there was no need of the colors in the image. So we stripped the image from it’s colors.</p>
+<p>2. Bluring it:
+It may seem a bit odd to blur out the image, but it helps to reduce
+all the noise present in the image and we are left with only the major
+constitunets of the image. The Bluring technique we applied was Gaussian Blur.</p>
+<p>3. Binarizing it:
+Binarizing means converting the image to black and white i.e. each
+pixel can either have a value of 0 (black) or 255 (white), nothing in
+between. The Binarization aka Thresholding technique we used was an
+adaptive thresholding, consisting of adaptive thresh gaussian method.
+Binarizing makes identifying QR code very much simpler.</p>
+<p>Here is what the image looks like after processing it</p>
+<img alt="_images/thresh_img.png" src="_images/thresh_img.png" />
+<p>All these processing on the image was done using <em>OpenCV</em> library and
+<em>pyzbar</em> was used to read the QR Codes from the image. Once all the
+packages are identified they are saved as key value pair along with
+its priority, it is published on the ROS topic <em>‘/pkg_task5/package_info’.</em></p>
+<p>All this package information is also uploaded to a google sheet using a ROS node called <em>node_action_server_ros_iot_bridge</em></p>
+</div>
+</div>
+<div class="section" id="dispatching-the-package">
+<h2>Dispatching The Package<a class="headerlink" href="#dispatching-the-package" title="Permalink to this headline">¶</a></h2>
+<p>Dispatching here means, picking up the ordered package from the shelf
+and placing it on the conveyor belt.</p>
+<p>Dispatching is done by a UR5 robotic arm, this arm has a vaccum
+gripper as it’s end effector (EE). The ROS node which controls this
+arm is named <em>node_ur5_1</em> and it is subscribed to the ROS Topics <em>‘/pkg_task5/package_info’.</em> and <em>‘/ros_iot_bridge/mqtt/sub’</em> hence it has all the necessary information like incoming orders and priority of the packages on the shelf.</p>
+<div class="section" id="how-to-dispatch-hp-orders-packages-first">
+<h3>How to dispatch HP orders packages first?<a class="headerlink" href="#how-to-dispatch-hp-orders-packages-first" title="Permalink to this headline">¶</a></h3>
+<p>Once an order is revceived it saves the order in a dictionary, and
+also saves it in a seprate list based on it’s priorirty. There are 3
+different lists for 3 different priority of orders.</p>
+<p>After saving the order, it will check the list of High Prioriry
+packages, if it is not empty (meaning there is a high priority order
+left to dispatch) it will start processing it. And if the list is
+empty, it will check the list of Medium Priority packages, and again,
+if it is not empty, it will process it. Lastly, it will check the list
+of the Lower Priority packages and if they are not empty it will
+process it.</p>
+<p>The whole process strictly follows the above order. This helps us to
+dispatch the higher priority packages first, medium priority packages
+second, and lower priority packages at last. Thus, helping in the
+goal of delivering HP orders first, then MP, and at last LP</p>
+</div>
+<div class="section" id="moving-the-ur5-arm-towards-the-package">
+<h3>Moving the UR5 Arm towards the package<a class="headerlink" href="#moving-the-ur5-arm-towards-the-package" title="Permalink to this headline">¶</a></h3>
+<p>Once the node selects which order to process, it will find the
+required package from the available packages. After figuring out
+which package will be used to fullfill the current order, it will
+play the correspoinding saved trajectory to reach there.</p>
+<p><em>What is a saved trajectory? and why use it?</em></p>
+<p>A trajectory is the path that the arm will take to reach the
+destination pose. This trajectory can be caluclated while executing
+or it can be played from a saved file, when played from a saved file
+it is called saved trajectory. The reason it is used is to save time.
+Calculating trajectories can take anywhere from 5 seconds to 90
+seconds. Furthermore, sometimes the trajectory plannar may fail to
+find a solution. Hence using saved trajectory is much more reliable and faster method.</p>
+<p>After playing the saved trajectory to reach the package, the arm
+activates the end effector (EE) in this case a vaccum gripper which
+grips the package with the help of suction. After gripping, the node
+plays yet another saved trajectory to put the package on the conveyor.
+On reaching on top of the conveyor it deactivates its EE and drops
+the package on top of the conveyor.</p>
+<p>With this a package is dispatched successfully.</p>
+<p>The node then uploads the dispatched package information like,
+dispatch date and time along with other order information to the
+google sheet by sending it as a goal to the <em>‘node_action_server_ros_iot_bridge’</em>. This node also publishes, the information of the package which it just dispatched on a ROS topic called <em>“/eyrc/vb/onConveyor”</em>.</p>
+</div>
+</div>
+<div class="section" id="shipping-the-package">
+<h2>Shipping The Package<a class="headerlink" href="#shipping-the-package" title="Permalink to this headline">¶</a></h2>
+<p>Shipping here means, putting the package inside a bin from where it
+can be delivered.</p>
+<p>Shipping is done with the help of yet another UR5 Robotic Arm and a
+logical camera. The ROS node used to do the shippping is called
+<em>node_ur5_2</em>. And this node is also subscribed to ROS topic
+<em>‘/pkg_task5/package_info’.</em> hence it has the package info, i.e.
+which package name has what priority. ROS topic <em>“/eyrc/vb/onConveyor”</em> is subscribed by this node, hence it knows which package
+is currently on the conveyor, and it’s order details.</p>
+<p>A logical camera is placed on top of the conveyor and is pointing
+on the the coveyor belt. As soon as it detects a package, it slows
+down the conveyor belt a bit and triggers the UR5 to activate its
+vaccum gripper and grab the package.</p>
+<p>After grabbing the package, since it has the order details of the
+package it finds out it’s priority and puts it inside the respective
+priority bin. Just like for dispatching the package, here also, we
+have used saved trajectories to save the time.</p>
+<div class="section" id="what-are-priority-bins">
+<h3>What are priority bins?<a class="headerlink" href="#what-are-priority-bins" title="Permalink to this headline">¶</a></h3>
+<p>There are 3 different bins, for 3 different priority of orders. One for HP, one for MP and one for LP.</p>
+<p>The node then uploads the shipped package information like,
+shipped date and time, estimated date of delivery along with other
+order information to the google sheet by sending it as a goal to the <em>‘node_action_server_ros_iot_bridge’</em>.</p>
+</div>
+</div>
+<div class="section" id="rqt-graph">
+<h2>RQT Graph<a class="headerlink" href="#rqt-graph" title="Permalink to this headline">¶</a></h2>
+<p>Feeling confused from all those long paragraphs? Here is a RQT Graph
+it contains everything related to ROS, every ROS Topic, ROS Node and
+ROS Action can be found here.</p>
+<img alt="_images/rqt_graph.png" src="_images/rqt_graph.png" />
+</div>
+</div>
+<div class="section" id="api-documentation">
+<h1>API Documentation<a class="headerlink" href="#api-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="python-api-s">
+<h2>Python API’s<a class="headerlink" href="#python-api-s" title="Permalink to this headline">¶</a></h2>
+<p>Here is the API Documentation of ROS nodes in <em>pkg_task5</em> and <em>pkg_ros_iot_bridge</em></p>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
+</ul>
+</div>
+<div class="section" id="other-files">
+<h2>Other Files<a class="headerlink" href="#other-files" title="Permalink to this headline">¶</a></h2>
+<p>This section includes description of all the message files, YAML
+files and configuration files.</p>
+<div class="section" id="files-in-pkg-ros-iot-bridge-pkg">
+<h3>Files in <em>pkg_ros_iot_bridge</em> pkg<a class="headerlink" href="#files-in-pkg-ros-iot-bridge-pkg" title="Permalink to this headline">¶</a></h3>
+<p>1. msgRosIot.action - This is a ROS Action File for the action server,
+<em>‘node_action_server_ros_iot_bridge’</em>. This action file consists of
+goal_protocol, goal_mode, goal_topic, goal_message,
+feedback_percentage_complete and result_flag_success. These are used
+by the action client while sending the goal to server, and also used
+by action server, while sending the result or feedback to the client</p>
+<p>2. config_pyiot.yaml - This is a configuration file, consisting of
+various parameters like mqtt broker url, server port, mqtt topic to
+subscribe to inorder to get the orders, the name of the ROS topic on
+which MQTT topics should be published. It also contains data about
+the google sheet on which all the data about packages, it’s dispatch
+and shipping info needs to be logged. Lastly, it also contains the
+email id on which, we need to send the alerts of dispatch and
+shipping.</p>
+<p>3. msgMqttSub.msg -  This is a ROS message file, consisting of details
+like timestamp, MQTT topic from which the message arrived and the message itself. The orders received by the <em>‘node_action_server_ros_iot_bridge’</em>. is published using this message on the ROS topic <em>‘/ros_iot_bridge/mqtt/sub’</em></p>
+</div>
+<div class="section" id="files-in-pkg-task5-pkg">
+<h3>Files in <em>pkg_task5</em> pkg<a class="headerlink" href="#files-in-pkg-task5-pkg" title="Permalink to this headline">¶</a></h3>
+<p>1. task5_solution.launch - This is a ROS launch file, running this
+file will start all the necessary ROS Nodes, along with the Moveit and Gazebo simulator.</p>
+<p>2. onConveyor.msg - This is the ROS message file, for the ROS topic
+<em>“/eyrc/vb/onConveyor”</em>. It contains the data such as order_id, city
+and package name of the package which is on the conveyor. Publised by
+the node, <em>‘node_ur5_1’</em> and subscribed by <em>‘node_ur5_2’</em></p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, VB1083@Darshan_Dodia.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
