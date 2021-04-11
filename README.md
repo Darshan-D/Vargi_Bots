@@ -68,7 +68,7 @@ points version of the above paragraph.
 
 This is sort of a brief summary of what we have done.
 
-## Packages Developed
+## ROS Packages Developed
 There are two ROS packages developed by us, they are as follows:
 
 * pkg_task5
