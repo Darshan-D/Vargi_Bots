@@ -1,7 +1,0 @@
-node\_package\_info module
-==========================
-
-.. automodule:: node_package_info
-    :members:
-    :undoc-members:
-    :show-inheritance:
