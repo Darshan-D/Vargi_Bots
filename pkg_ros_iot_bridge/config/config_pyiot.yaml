@@ -1,0 +1,29 @@
+# config_pyiot.yaml
+# IoT configuration
+config_pyiot:
+  mqtt:
+    server_url: "broker.mqttdashboard.com" #http://www.hivemq.com/demos/websocket-client/
+
+    server_port: 1883
+    topic_sub: "/eyrc/vb/iOeCqZLI/orders"
+    topic_pub: "/eyrc/iOeCqZLI/orders"
+    qos: 0
+
+    sub_cb_ros_topic: "/ros_iot_bridge/mqtt/sub"
+
+
+  google_apps:
+    # Our Spreadsheet Details - Task 5
+    # spread_sheet_id: AKfycbwugSwYG2qbL25xTggfBfaOc2mAHMnR5ZUw3rH4lztAIq-0wHe-tWrT
+    # spread_sheet_url: https://script.google.com/macros/s/AKfycbwugSwYG2qbL25xTggfBfaOc2mAHMnR5ZUw3rH4lztAIq-0wHe-tWrT/exec
+    # email_id: "eyrc.vb.1083@gmail.com"
+    
+    # # Our Spreadsheet Details - Task 6
+    # spread_sheet_id: AKfycbw1IdKB8_LTvQNzcfCwtiQL1NPDkuVH1Hd2ppmkObKjIOo6EHrX34yplg
+    # spread_sheet_url: https://script.google.com/macros/s/AKfycbw1IdKB8_LTvQNzcfCwtiQL1NPDkuVH1Hd2ppmkObKjIOo6EHrX34yplg/exec
+    # email_id: "eyrc.vb.1083@gmail.com"
+    
+    # Eyantra Spreadsheet Details
+    spread_sheet_id: AKfycbw5xylppoda-8HPjt2Tzq4ShU_Xef-Ik-hEtBPcPk0gdGw8095j4RZ7
+    spread_sheet_url: https://script.google.com/macros/s/AKfycbw5xylppoda-8HPjt2Tzq4ShU_Xef-Ik-hEtBPcPk0gdGw8095j4RZ7/exec
+    email_id: "eyrc.vb.0000@gmail.com"
