@@ -1,0 +1,608 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>node_package_info &mdash; Vargi Bots 3 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Vargi Bots
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Vargi Bots</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">Module code</a> &raquo;</li>
+        
+      <li>node_package_info</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for node_package_info</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">&quot;node_package_info&quot; is used to do all the image processing tasks.</span>
+<span class="sd">This node will scan all the packages and save the pose and priority of</span>
+<span class="sd">the package as a key value pair, and send it other ROS nodes.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">rospy</span>
+<span class="kn">import</span> <span class="nn">cv2</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">actionlib</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+
+<span class="kn">from</span> <span class="nn">std_msgs.msg</span> <span class="kn">import</span> <span class="n">String</span>
+<span class="kn">from</span> <span class="nn">sensor_msgs.msg</span> <span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">from</span> <span class="nn">cv_bridge</span> <span class="kn">import</span> <span class="n">CvBridge</span><span class="p">,</span> <span class="n">CvBridgeError</span>
+
+<span class="kn">from</span> <span class="nn">pyzbar.pyzbar</span> <span class="kn">import</span> <span class="n">decode</span>
+
+<span class="kn">from</span> <span class="nn">std_msgs.msg</span> <span class="kn">import</span> <span class="n">String</span>
+
+<span class="kn">from</span> <span class="nn">pkg_ros_iot_bridge.msg</span> <span class="kn">import</span> <span class="n">msgRosIotAction</span>
+<span class="kn">from</span> <span class="nn">pkg_ros_iot_bridge.msg</span> <span class="kn">import</span> <span class="n">msgRosIotGoal</span>
+<span class="kn">from</span> <span class="nn">pkg_ros_iot_bridge.msg</span> <span class="kn">import</span> <span class="n">msgRosIotResult</span>
+
+<div class="viewcode-block" id="CameraActionClient"><a class="viewcode-back" href="../rst/node_package_info.html#node_package_info.CameraActionClient">[docs]</a><span class="k">class</span> <span class="nc">CameraActionClient</span><span class="p">:</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This class is used for image processing from 2D Camera</span>
+
+<span class="sd">  This function will initialize this node as ROS Action Client</span>
+<span class="sd">  This will also publish all the package_info and package_pose </span>
+<span class="sd">  to other ROS nodes </span>
+<span class="sd">  &quot;&quot;&quot;</span>
+
+  <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The Constructor for CameraActionClient.</span>
+
+<span class="sd">    It sets up the bridge between openCV and ROS. It will also, setup</span>
+<span class="sd">    this node as an publisher to &quot;/eyrc/vb/camera_1/image_raw&quot; ROS topic.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">bridge</span> <span class="o">=</span> <span class="n">CvBridge</span><span class="p">()</span>
+
+    <span class="c1"># Subscribing to ROS &quot;/eyrc/vb/camera_1/image_raw&quot; topic to get an input image</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">image_sub</span> <span class="o">=</span> <span class="n">rospy</span><span class="o">.</span><span class="n">Subscriber</span><span class="p">(</span><span class="s2">&quot;/eyrc/vb/camera_1/image_raw&quot;</span><span class="p">,</span> <span class="n">Image</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">callback</span><span class="p">)</span>
+    
+    <span class="c1"># Creating a handle to publish the messages to a topic</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">pub_handle</span> <span class="o">=</span> <span class="n">rospy</span><span class="o">.</span><span class="n">Publisher</span><span class="p">(</span><span class="s1">&#39;/pkg_task5/package_info&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">,</span> <span class="n">queue_size</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span>
+    
+    <span class="c1"># Dictionary to store, the package name and color as a key value pair</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;packagen00&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;packagen01&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;packagen02&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;packagen10&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;packagen11&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;packagen12&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;packagen20&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;packagen21&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;packagen22&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;packagen30&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;packagen31&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;packagen32&quot;</span><span class="p">:</span> <span class="s2">&quot;NA&quot;</span><span class="p">}</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">all_info_aquired</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">packages_updated_on_gsheet</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># Making it action client</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_ac</span> <span class="o">=</span> <span class="n">actionlib</span><span class="o">.</span><span class="n">ActionClient</span><span class="p">(</span><span class="s1">&#39;/action_ros_iot&#39;</span><span class="p">,</span>
+                                      <span class="n">msgRosIotAction</span><span class="p">)</span>
+
+    <span class="c1"># Dictionary to store the goal handles</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_goal_handles</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># Wait for the action server to start</span>
+    <span class="n">rospy</span><span class="o">.</span><span class="n">loginfo</span><span class="p">(</span><span class="s2">&quot;[CAMERA CLIENT] Waiting for Action server ...&quot;</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_ac</span><span class="o">.</span><span class="n">wait_for_server</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="CameraActionClient.pre_process_img"><a class="viewcode-back" href="../rst/node_package_info.html#node_package_info.CameraActionClient.pre_process_img">[docs]</a>  <span class="k">def</span> <span class="nf">pre_process_img</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg_image</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function is used to do preprocess the incoming image</span>
+
+<span class="sd">    Preprocessing includes converting to gray scale, bluring and</span>
+<span class="sd">    thresholding the image. All these helps us to read the different</span>
+<span class="sd">    QR codes from the image</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">      arg_image (image): The input list (image) from the 2D Camera</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      thresh_im (image): The preprocessed version of the argument image</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Converting image to grey scale</span>
+    <span class="n">grey_image</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">arg_image</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_BGR2GRAY</span><span class="p">)</span>
+
+    <span class="c1"># Bluring the image</span>
+    <span class="n">blur_im</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">GaussianBlur</span><span class="p">(</span><span class="n">grey_image</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># Doing binarization</span>
+    <span class="n">thresh_im</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">adaptiveThreshold</span><span class="p">(</span><span class="n">blur_im</span><span class="p">,</span><span class="mi">255</span><span class="p">,</span><span class="n">cv2</span><span class="o">.</span><span class="n">ADAPTIVE_THRESH_GAUSSIAN_C</span><span class="p">,</span>\
+            <span class="n">cv2</span><span class="o">.</span><span class="n">THRESH_BINARY</span><span class="p">,</span><span class="mi">11</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+    
+    <span class="c1"># cv2.imshow(&#39;Thresh&#39;, cv2.resize(thresh_im, (720/2, 1280/2)))</span>
+
+    <span class="k">return</span> <span class="n">thresh_im</span></div>
+
+<div class="viewcode-block" id="CameraActionClient.get_qr_data"><a class="viewcode-back" href="../rst/node_package_info.html#node_package_info.CameraActionClient.get_qr_data">[docs]</a>  <span class="k">def</span> <span class="nf">get_qr_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg_image</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function is used to read the QR codes from the image.</span>
+
+<span class="sd">    After reading the QR data, it stores them as value to the pacakge name</span>
+<span class="sd">    which is used as key. This helps in figuring out which package has what</span>
+<span class="sd">    priority.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">      arg_image (img): The preprocessed image, from which QR data is to be read</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Get the QR data from the image</span>
+    <span class="n">qr_result</span> <span class="o">=</span> <span class="n">decode</span><span class="p">(</span><span class="n">arg_image</span><span class="p">)</span>
+    <span class="n">changes_made</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># Go through all the boxes</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">qr_result</span><span class="p">)</span> <span class="ow">is</span> <span class="mi">12</span> <span class="ow">and</span> <span class="n">changes_made</span> <span class="o">&lt;</span> <span class="mi">13</span><span class="p">:</span>
+      <span class="k">for</span> <span class="n">box</span> <span class="ow">in</span> <span class="n">qr_result</span><span class="p">:</span>
+
+        <span class="c1"># Filter out boxes according to the rows</span>
+        <span class="c1"># then according to the colums</span>
+        <span class="c1"># Save the result in a dict</span>
+
+        <span class="c1"># First row</span>
+        <span class="k">if</span> <span class="n">box</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">top</span> <span class="o">&lt;</span> <span class="mi">400</span><span class="p">:</span>
+
+          <span class="c1"># Leftmost</span>
+          <span class="k">if</span> <span class="n">box</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">left</span> <span class="o">&lt;</span> <span class="mi">150</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">[</span><span class="s1">&#39;packagen00&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;NA&#39;</span><span class="p">:</span>
+            <span class="n">changes_made</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">[</span><span class="s1">&#39;packagen00&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">box</span><span class="o">.</span><span class="n">data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">upload_on_gsheet</span><span class="p">(</span><span class="s1">&#39;packagen00&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">box</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
+
+          <span class="c1"># Rightmost</span>
+          <span class="k">elif</span> <span class="n">box</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">left</span> <span class="o">&gt;</span> <span class="mi">450</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">[</span><span class="s1">&#39;packagen02&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;NA&#39;</span><span class="p">:</span>
+            <span class="n">changes_made</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">[</span><span class="s1">&#39;packagen02&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">box</span><span class="o">.</span><span class="n">data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">upload_on_gsheet</span><span class="p">(</span><span class="s1">&#39;packagen02&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">box</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
+
+          <span class="c1"># Middle one</span>
+          <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">[</span><span class="s1">&#39;packagen01&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;NA&#39;</span><span class="p">:</span>
+            <span class="n">changes_made</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">[</span><span class="s1">&#39;packagen01&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">box</span><span class="o">.</span><span class="n">data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">upload_on_gsheet</span><span class="p">(</span><span class="s1">&#39;packagen01&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">box</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
+
+        <span class="c1"># Second Row</span>
+        <span class="k">if</span> <span class="n">box</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">top</span> <span class="o">&gt;</span> <span class="mi">400</span> <span class="ow">and</span> <span class="n">box</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">top</span> <span class="o">&lt;</span> <span class="mi">510</span><span class="p">:</span>
+
+          <span class="c1"># Leftmost</span>
+          <span class="k">if</span> <span class="n">box</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">left</span> <span class="o">&lt;</span> <span class="mi">150</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">[</span><span class="s1">&#39;packagen10&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;NA&#39;</span><span class="p">:</span>
+            <span class="n">changes_made</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">[</span><span class="s1">&#39;packagen10&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">box</span><span class="o">.</span><span class="n">data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">upload_on_gsheet</span><span class="p">(</span><span class="s1">&#39;packagen10&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">box</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
+
+          <span class="c1"># Rightmost</span>
+          <span class="k">elif</span> <span class="n">box</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">left</span> <span class="o">&gt;</span> <span class="mi">450</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">[</span><span class="s1">&#39;packagen12&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;NA&#39;</span><span class="p">:</span>
+            <span class="n">changes_made</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">[</span><span class="s1">&#39;packagen12&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">box</span><span class="o">.</span><span class="n">data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">upload_on_gsheet</span><span class="p">(</span><span class="s1">&#39;packagen12&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">box</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
+
+          <span class="c1"># Middle one</span>
+          <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">[</span><span class="s1">&#39;packagen11&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;NA&#39;</span><span class="p">:</span>
+            <span class="n">changes_made</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">[</span><span class="s1">&#39;packagen11&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">box</span><span class="o">.</span><span class="n">data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">upload_on_gsheet</span><span class="p">(</span><span class="s1">&#39;packagen11&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">box</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
+
+        <span class="c1"># Third Row</span>
+        <span class="k">if</span> <span class="n">box</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">top</span> <span class="o">&gt;</span> <span class="mi">510</span> <span class="ow">and</span> <span class="n">box</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">top</span> <span class="o">&lt;</span> <span class="mi">700</span><span class="p">:</span>
+
+          <span class="c1"># Leftmost</span>
+          <span class="k">if</span> <span class="n">box</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">left</span> <span class="o">&lt;</span> <span class="mi">150</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">[</span><span class="s1">&#39;packagen20&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;NA&#39;</span><span class="p">:</span>
+            <span class="n">changes_made</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">[</span><span class="s1">&#39;packagen20&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">box</span><span class="o">.</span><span class="n">data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">upload_on_gsheet</span><span class="p">(</span><span class="s1">&#39;packagen20&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">box</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
+
+          <span class="c1"># Rightmost</span>
+          <span class="k">elif</span> <span class="n">box</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">left</span> <span class="o">&gt;</span> <span class="mi">450</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">[</span><span class="s1">&#39;packagen22&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;NA&#39;</span><span class="p">:</span>
+            <span class="n">changes_made</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">[</span><span class="s1">&#39;packagen22&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">box</span><span class="o">.</span><span class="n">data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">upload_on_gsheet</span><span class="p">(</span><span class="s1">&#39;packagen22&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">box</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
+
+          <span class="c1"># Middle one</span>
+          <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">[</span><span class="s1">&#39;packagen21&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;NA&#39;</span><span class="p">:</span>
+            <span class="n">changes_made</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">[</span><span class="s1">&#39;packagen21&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">box</span><span class="o">.</span><span class="n">data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">upload_on_gsheet</span><span class="p">(</span><span class="s1">&#39;packagen21&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">box</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
+
+        <span class="c1"># Fourth Row</span>
+        <span class="k">if</span> <span class="n">box</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">top</span> <span class="o">&gt;</span> <span class="mi">700</span><span class="p">:</span>
+
+          <span class="c1"># Leftmost</span>
+          <span class="k">if</span> <span class="n">box</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">left</span> <span class="o">&lt;</span> <span class="mi">150</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">[</span><span class="s1">&#39;packagen30&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;NA&#39;</span><span class="p">:</span>
+            <span class="n">changes_made</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">[</span><span class="s1">&#39;packagen30&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">box</span><span class="o">.</span><span class="n">data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">upload_on_gsheet</span><span class="p">(</span><span class="s1">&#39;packagen30&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">box</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
+
+          <span class="c1"># Rightmost</span>
+          <span class="k">elif</span> <span class="n">box</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">left</span> <span class="o">&gt;</span> <span class="mi">450</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">[</span><span class="s1">&#39;packagen32&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;NA&#39;</span><span class="p">:</span>
+            <span class="n">changes_made</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">[</span><span class="s1">&#39;packagen32&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">box</span><span class="o">.</span><span class="n">data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">upload_on_gsheet</span><span class="p">(</span><span class="s1">&#39;packagen32&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">box</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
+
+          <span class="c1"># Middle one</span>
+          <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">[</span><span class="s1">&#39;packagen31&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;NA&#39;</span><span class="p">:</span>
+            <span class="n">changes_made</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">[</span><span class="s1">&#39;packagen31&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">box</span><span class="o">.</span><span class="n">data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">upload_on_gsheet</span><span class="p">(</span><span class="s1">&#39;packagen31&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">box</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
+
+    <span class="c1"># Check if all the package info is collected</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">)</span> <span class="o">==</span> <span class="mi">12</span> <span class="ow">and</span> <span class="n">changes_made</span> <span class="o">==</span> <span class="mi">12</span><span class="p">:</span>
+      <span class="n">rospy</span><span class="o">.</span><span class="n">logwarn</span><span class="p">(</span><span class="s2">&quot;&gt;&gt;&gt; All Package Info Acquired&quot;</span><span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">all_info_aquired</span> <span class="o">=</span> <span class="kc">True</span>
+
+      <span class="c1"># Iteratre throught the packages to publish the info</span>
+      <span class="k">for</span> <span class="n">package</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">:</span>
+        <span class="n">info</span> <span class="o">=</span> <span class="n">package</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">package_pose_color</span><span class="p">[</span><span class="n">package</span><span class="p">]</span>
+        <span class="n">rospy</span><span class="o">.</span><span class="n">loginfo</span><span class="p">(</span><span class="s2">&quot;&gt;&gt;&gt; Publishing&quot;</span><span class="p">)</span>
+        <span class="n">rospy</span><span class="o">.</span><span class="n">loginfo</span><span class="p">(</span><span class="n">info</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pub_handle</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">info</span><span class="p">)</span></div>
+  
+
+<div class="viewcode-block" id="CameraActionClient.callback"><a class="viewcode-back" href="../rst/node_package_info.html#node_package_info.CameraActionClient.callback">[docs]</a>  <span class="k">def</span> <span class="nf">callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">data</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Callback function to &quot;/eyrc/vb/camera_1/image_raw&quot; ROS topic.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">      data (ROS messaage): Incoming message from &quot;/eyrc/vb/camera_1/image_raw&quot; ROS topic</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Convert the incoming to data to openCV image</span>
+        <span class="n">cv_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bridge</span><span class="o">.</span><span class="n">imgmsg_to_cv2</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;bgr8&quot;</span><span class="p">)</span>
+    
+    <span class="k">except</span> <span class="n">CvBridgeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+      <span class="n">rospy</span><span class="o">.</span><span class="n">logerr</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+    <span class="c1"># Extract the rows, colums and channel info from the image</span>
+    <span class="p">(</span><span class="n">rows</span><span class="p">,</span><span class="n">cols</span><span class="p">,</span><span class="n">channels</span><span class="p">)</span> <span class="o">=</span> <span class="n">cv_image</span><span class="o">.</span><span class="n">shape</span>
+    
+    <span class="n">image</span> <span class="o">=</span> <span class="n">cv_image</span>
+
+    <span class="c1"># Resize a 720x1280 image to 360x640 to fit it on the screen</span>
+    <span class="n">resized_image</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="p">(</span><span class="mi">720</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1280</span><span class="o">/</span><span class="mi">2</span><span class="p">))</span> 
+
+    <span class="c1"># cv2.imshow(&quot;/eyrc/vb/camera_1/image_raw&quot;, resized_image)</span>
+
+    <span class="c1"># If info on all the package is not acquired</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_info_aquired</span><span class="p">:</span>
+
+      <span class="c1"># Preprocess the image</span>
+      <span class="n">thresh_im</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_process_img</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+      
+      <span class="c1"># Read the QR data from the image</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">get_qr_data</span><span class="p">(</span><span class="n">thresh_im</span><span class="p">)</span>
+    
+    <span class="n">cv2</span><span class="o">.</span><span class="n">waitKey</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span></div>
+
+
+  <span class="c1"># Action Client Related Code ----------------------</span>
+<div class="viewcode-block" id="CameraActionClient.on_transition"><a class="viewcode-back" href="../rst/node_package_info.html#node_package_info.CameraActionClient.on_transition">[docs]</a>  <span class="k">def</span> <span class="nf">on_transition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">goal_handle</span><span class="p">):</span>
+      <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">      Function called when there is a change in state of Action Client State Machine</span>
+<span class="sd">      </span>
+<span class="sd">      Parameters:</span>
+<span class="sd">          goal_handle: goal_handle of the goal, whose state changed</span>
+<span class="sd">      &quot;&quot;&quot;</span>
+   
+      <span class="c1"># from on_goal() to on_transition(). goal_handle generated by send_goal() is used here.</span>
+      <span class="n">result</span> <span class="o">=</span> <span class="n">msgRosIotResult</span><span class="p">()</span>
+
+      <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+      <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_goal_handles</span><span class="p">:</span>
+          <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_goal_handles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">goal_handle</span><span class="p">:</span>
+              <span class="n">index</span> <span class="o">=</span> <span class="n">i</span>
+              <span class="k">break</span>
+
+      <span class="n">rospy</span><span class="o">.</span><span class="n">loginfo</span><span class="p">(</span><span class="s2">&quot;[CAMERA CLIENT] Transition Callback. Client Goal Handle #: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">index</span><span class="p">))</span>
+      <span class="n">rospy</span><span class="o">.</span><span class="n">loginfo</span><span class="p">(</span><span class="s2">&quot;[CAMERA CLIENT] Comm. State: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">goal_handle</span><span class="o">.</span><span class="n">get_comm_state</span><span class="p">())</span> <span class="p">)</span>
+      <span class="n">rospy</span><span class="o">.</span><span class="n">loginfo</span><span class="p">(</span><span class="s2">&quot;[CAMERA CLIENT] Goal Status: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">goal_handle</span><span class="o">.</span><span class="n">get_goal_status</span><span class="p">())</span> <span class="p">)</span>
+      
+      <span class="c1"># Comm State - Monitors the State Machine of the Client which is different from Server&#39;s</span>
+      <span class="c1"># Comm State = 2 -&gt; Active</span>
+      <span class="c1"># Comm State = 3 -&gt; Wating for Result</span>
+      <span class="c1"># Comm State = 7 -&gt; Done</span>
+      
+      <span class="c1"># if (Comm State == ACTIVE)</span>
+      <span class="k">if</span> <span class="n">goal_handle</span><span class="o">.</span><span class="n">get_comm_state</span><span class="p">()</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+          <span class="n">rospy</span><span class="o">.</span><span class="n">loginfo</span><span class="p">(</span><span class="s2">&quot;[CAMERA CLIENT] &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;: Goal just went active.&quot;</span><span class="p">)</span>
+      
+      <span class="c1"># if (Comm State == DONE)</span>
+      <span class="k">if</span> <span class="n">goal_handle</span><span class="o">.</span><span class="n">get_comm_state</span><span class="p">()</span> <span class="o">==</span> <span class="mi">7</span><span class="p">:</span>
+          <span class="n">rospy</span><span class="o">.</span><span class="n">loginfo</span><span class="p">(</span><span class="s2">&quot;[CAMERA CLIENT] &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;: Goal is DONE&quot;</span><span class="p">)</span>
+          <span class="n">rospy</span><span class="o">.</span><span class="n">loginfo</span><span class="p">(</span><span class="s2">&quot;[CAMERA CLIENT] &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">goal_handle</span><span class="o">.</span><span class="n">get_terminal_state</span><span class="p">()))</span>
+          
+          <span class="c1"># get_result() gets the result produced by the Action Server</span>
+          <span class="n">result</span> <span class="o">=</span> <span class="n">goal_handle</span><span class="o">.</span><span class="n">get_result</span><span class="p">()</span>
+          <span class="n">rospy</span><span class="o">.</span><span class="n">loginfo</span><span class="p">(</span><span class="s2">&quot;[CAMERA CLIENT] &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">flag_success</span><span class="p">))</span>
+
+          <span class="k">if</span> <span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">flag_success</span> <span class="o">==</span> <span class="kc">True</span><span class="p">):</span>
+              <span class="n">rospy</span><span class="o">.</span><span class="n">loginfo</span><span class="p">(</span><span class="s2">&quot;[CAMERA CLIENT] Goal successfully completed. Client Goal Handle #: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">index</span><span class="p">))</span>
+              <span class="bp">self</span><span class="o">.</span><span class="n">packages_updated_on_gsheet</span> <span class="o">+=</span> <span class="mi">1</span>
+          <span class="k">else</span><span class="p">:</span>
+              <span class="n">rospy</span><span class="o">.</span><span class="n">logerr</span><span class="p">(</span><span class="s2">&quot;[CAMERA CLIENT] Goal failed. Client Goal Handle #: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">index</span><span class="p">))</span>
+
+      <span class="c1"># if all the package info updated on gsheet</span>
+      <span class="c1"># kill this node to free up resources</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">packages_updated_on_gsheet</span> <span class="o">&gt;=</span><span class="mi">12</span><span class="p">:</span>
+          <span class="n">rospy</span><span class="o">.</span><span class="n">logwarn</span><span class="p">(</span><span class="s2">&quot;[CAMERA CLIENT] &gt;&gt;&gt; All Package info published&quot;</span><span class="p">)</span>
+          <span class="n">rospy</span><span class="o">.</span><span class="n">logwarn</span><span class="p">(</span><span class="s2">&quot;[CAMERA CLIENT] *** Shutting down this node&quot;</span><span class="p">)</span>
+          <span class="n">rospy</span><span class="o">.</span><span class="n">signal_shutdown</span><span class="p">(</span><span class="s2">&quot;All info published&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CameraActionClient.send_goal"><a class="viewcode-back" href="../rst/node_package_info.html#node_package_info.CameraActionClient.send_goal">[docs]</a>  <span class="k">def</span> <span class="nf">send_goal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg_protocol</span><span class="p">,</span> <span class="n">arg_mode</span><span class="p">,</span> <span class="n">arg_topic</span><span class="p">,</span> <span class="n">arg_message</span><span class="p">):</span>
+      <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">      Function used to send goals to the action server</span>
+
+<span class="sd">      NOTE -</span>
+<span class="sd">      We have not changed the contents of the action msg,</span>
+<span class="sd">      as we were not sure if that is allowed or not.</span>
+<span class="sd">      Hence, parameters name and it&#39;s function will not make</span>
+<span class="sd">      much sense, since we are using it for diffrent purposes</span>
+<span class="sd">      than its name      </span>
+<span class="sd">      </span>
+<span class="sd">      Parameters:</span>
+<span class="sd">          arg_protocol (str): goal_protocol to be used \</span>
+<span class="sd">                        google_apps: To send data to google sheet \</span>
+<span class="sd">                        mqtt: To send data to mqtt server \</span>
+<span class="sd">          arg_mode (str): Mode of the goal (now depricated i.e. value should be &quot;NA&quot;)</span>
+<span class="sd">          arg_topic (str): Name of the sheet on which to upload data</span>
+<span class="sd">          arg_message (str): Contents of the data to be uploaded</span>
+<span class="sd">      </span>
+<span class="sd">      Returns:</span>
+<span class="sd">          goal_handle: goal_handle of the sent goal</span>
+<span class="sd">      &quot;&quot;&quot;</span>
+
+      <span class="c1"># Create a Goal Message Object</span>
+      <span class="n">goal</span> <span class="o">=</span> <span class="n">msgRosIotGoal</span><span class="p">()</span>
+
+      <span class="n">goal</span><span class="o">.</span><span class="n">protocol</span> <span class="o">=</span> <span class="n">arg_protocol</span>
+      <span class="n">goal</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="n">arg_mode</span>
+      <span class="n">goal</span><span class="o">.</span><span class="n">topic</span> <span class="o">=</span> <span class="n">arg_topic</span>
+      <span class="n">goal</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">arg_message</span>
+
+      <span class="c1"># Send the goal</span>
+      <span class="n">goal_handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ac</span><span class="o">.</span><span class="n">send_goal</span><span class="p">(</span><span class="n">goal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_transition</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+      <span class="n">rospy</span><span class="o">.</span><span class="n">loginfo</span><span class="p">(</span><span class="s2">&quot;[CAMERA CLIENT] Sending the goal&quot;</span><span class="p">)</span>
+
+      <span class="k">return</span> <span class="n">goal_handle</span></div>
+
+<div class="viewcode-block" id="CameraActionClient.upload_on_gsheet"><a class="viewcode-back" href="../rst/node_package_info.html#node_package_info.CameraActionClient.upload_on_gsheet">[docs]</a>  <span class="k">def</span> <span class="nf">upload_on_gsheet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">package</span><span class="p">,</span> <span class="n">color</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function used to upload the data to google sheet, by sending goal to Action Server</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        package (str): Name of the package, whose data is being sent</span>
+<span class="sd">        color (str): Color of the package whose data is being sent</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Assign the goal number based on the package name</span>
+    <span class="n">goal_no</span> <span class="o">=</span> <span class="n">package</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
+
+    <span class="c1"># Give the message in the form of &quot;packagen22_green&quot;</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="n">package</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">color</span>
+
+    <span class="c1"># Send the goal</span>
+    <span class="n">goal_handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_goal</span><span class="p">(</span><span class="s2">&quot;google_apps&quot;</span><span class="p">,</span> <span class="s2">&quot;NA&quot;</span><span class="p">,</span> <span class="s2">&quot;Inventory&quot;</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_goal_handles</span><span class="p">[</span><span class="n">goal_no</span><span class="p">]</span> <span class="o">=</span> <span class="n">goal_handle</span>
+    <span class="n">rospy</span><span class="o">.</span><span class="n">loginfo</span><span class="p">(</span><span class="s2">&quot;[CAMERA CLIENT] </span><span class="si">{}</span><span class="s2"> Goal sent&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">goal_no</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../rst/node_package_info.html#node_package_info.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  The main function, execution starts from here</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  
+  <span class="c1"># Initializing the node</span>
+  <span class="c1"># disable_signals parameter is given to kill the node, when all the info is published</span>
+  <span class="c1"># this is done inorder to free up the resources</span>
+  <span class="n">rospy</span><span class="o">.</span><span class="n">init_node</span><span class="p">(</span><span class="s1">&#39;node_package_info&#39;</span><span class="p">,</span> <span class="n">anonymous</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">disable_signals</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+  <span class="c1"># Give other nodes time to startup</span>
+  <span class="n">rospy</span><span class="o">.</span><span class="n">logwarn</span><span class="p">(</span><span class="s2">&quot;[CAMERA CLIENT] Waiting 20 Seconds to let other nodes startup&quot;</span><span class="p">)</span>
+  <span class="n">rospy</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+
+  <span class="c1"># Initialize the class</span>
+  <span class="n">ic</span> <span class="o">=</span> <span class="n">CameraActionClient</span><span class="p">()</span>
+
+  <span class="c1"># Not letting the node die</span>
+  <span class="k">try</span><span class="p">:</span>
+    <span class="n">rospy</span><span class="o">.</span><span class="n">spin</span><span class="p">()</span>
+
+  <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+    <span class="n">rospy</span><span class="o">.</span><span class="n">loginfo</span><span class="p">(</span><span class="s2">&quot;Shutting down due to </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;KeyboardInterrupt&quot;</span><span class="p">))</span>
+  
+  <span class="c1"># Once the program is completed, close all openCV windows</span>
+  <span class="n">cv2</span><span class="o">.</span><span class="n">destroyAllWindows</span><span class="p">()</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+      <span class="n">main</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">rospy</span><span class="o">.</span><span class="n">ROSInterruptException</span><span class="p">:</span>
+        <span class="k">pass</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, VB1083@Darshan_Dodia.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
