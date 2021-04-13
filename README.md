@@ -4,7 +4,7 @@ Documentation and implementation of eYRC 2020-2021 Vargi Bots theme
 The aim of this theme is to automate the whole warehouse, where a robotic arm will dispatch and ship the incoming order, buyers will receive the e-mail alerts, and the current status of the inventory will be updated live on the warehouse website.
 
 A special thanks my team members in the competition, without whom the whole project might not have been possible
-* Rutuja Choudary
+* Rutuja Chaudhari
 * Prajyoth Poonja
 * Mrudula Acharya
 
