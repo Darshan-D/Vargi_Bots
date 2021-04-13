@@ -9,7 +9,7 @@ A special thanks my team members in the competition, without whom the whole proj
 * Mrudula Acharya
 
 Here is our implementation Video of the same:
-https://www.youtube.com/watch?v=dQw4w9WgXcQ
+https://youtu.be/sZMcY_kCU2w
 
 ## Concepts Used
 
